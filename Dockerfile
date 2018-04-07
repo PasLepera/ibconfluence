@@ -2,8 +2,8 @@ FROM paslepera/iborajre8:0.1
 LABEL maintainer="Pasquale Lepera <pasquale@ibuildings.it>"
 
 # https://confluence.atlassian.com/doc/confluence-home-and-other-important-directories-590259707.html
-ENV CONFLUENCE_HOME /var/local/atlassian/confluence
-ENV CONFLUENCE_INSTALL_DIR /usr/local/atlassian/confluence
+ENV CONFLUENCE_HOME          /var/atlassian/application-data/confluence
+ENV CONFLUENCE_INSTALL_DIR   /opt/atlassian/confluence
 ENV RUN_USER confluence
 ENV RUN_GROUP confluence
 
@@ -23,6 +23,7 @@ RUN deps=" \
 	wget \
 	ca-certificates \
 	openssl \
+        vim-tiny \
 	" \
 	&& apt-get update -qq \
 	&& apt-get install -y $deps --no-install-recommends \
@@ -42,6 +43,7 @@ RUN chmod +x /entrypoint.sh \
     && mkdir -p ${CONFLUENCE_INSTALL_DIR} \
     && curl -L --silent ${DOWNLOAD_URL} > /tmp/atlassian-confluence-${CONFLUENCE_VERSION}.tar.gz \
     && tar -xzf /tmp/atlassian-confluence-${CONFLUENCE_VERSION}.tar.gz --strip-components=1 -C "${CONFLUENCE_INSTALL_DIR}" \
+    && cp /tmp/jmxContext.xml  ${CONFLUENCE_INSTALL_DIR}/confluence/WEB-INF/classes \
     && chown -R ${RUN_USER}:${RUN_GROUP} ${CONFLUENCE_INSTALL_DIR}/ \
     && sed -i -e 's/-Xms\([0-9]\+[kmg]\) -Xmx\([0-9]\+[kmg]\)/-Xms\${JVM_MINIMUM_MEMORY:=\1} -Xmx\${JVM_MAXIMUM_MEMORY:=\2} \${JVM_SUPPORT_RECOMMENDED_ARGS} -Dconfluence.home=\${CONFLUENCE_HOME}/g' ${CONFLUENCE_INSTALL_DIR}/bin/setenv.sh \
     && sed -i -e 's/port="8090"/port="8090" secure="${catalinaConnectorSecure}" scheme="${catalinaConnectorScheme}" proxyName="${catalinaConnectorProxyName}" proxyPort="${catalinaConnectorProxyPort}"/' ${CONFLUENCE_INSTALL_DIR}/conf/server.xml \
